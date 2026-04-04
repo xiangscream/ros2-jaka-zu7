@@ -1,0 +1,10 @@
+# Goal
+uint8 sequence_id
+---
+# Result
+bool success
+string message
+---
+# Feedback
+uint8 current_state
+float32 progress

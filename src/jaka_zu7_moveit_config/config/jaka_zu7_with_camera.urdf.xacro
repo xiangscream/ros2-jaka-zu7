@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="jaka_zu7">
+    <xacro:arg name="initial_positions_file" default="initial_positions.yaml" />
+    <xacro:arg name="use_gazebo" default="false"/>
+    <xacro:arg name="use_rviz_sim" default="false"/>
+
+    <!-- Import jaka_zu7 urdf file -->
+    <xacro:include filename="$(find jaka_description)/urdf/jaka_zu7.urdf" />
+
+    <!-- Import control_xacro -->
+    <xacro:include filename="jaka_zu7.ros2_control.xacro" />
+
+    <!-- Import camera xacro (eye-in-hand) -->
+    <xacro:include filename="$(find jaka_vision)/urdf/inc/jaka_camera_gazebo.xacro" />
+
+    <!-- Add camera to end-effector (tool0 = Link_6) -->
+    <xacro:jaka_camera_gazebo parent="Link_6" />
+
+    <!-- ros2_control hardware -->
+    <xacro:jaka_zu7_ros2_control name="jaka_zu7_hardware" initial_positions_file="$(arg initial_positions_file)" use_gazebo="$(arg use_gazebo)" use_rviz_sim="$(arg use_rviz_sim)" />
+
+</robot>
