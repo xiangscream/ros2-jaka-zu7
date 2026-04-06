@@ -17,9 +17,6 @@ setup(
         ('share/' + package_name + '/urdf/inc', [
             'urdf/inc/jaka_camera_gazebo.xacro',
         ]),
-        ('share/' + package_name + '/models', [
-            'models/eye_in_hand_camera.sdf',
-        ]),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
