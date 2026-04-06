@@ -14,6 +14,8 @@ import os
 
 def generate_launch_description():
     # Build moveit config with xacro args for gazebo
+    # Note: We use the basic jaka_zu7.urdf.xacro because the world file
+    # already contains the complete robot with camera inline
     moveit_config = (
         MoveItConfigsBuilder("jaka_zu7", package_name="jaka_zu7_moveit_config")
         .robot_description(mappings={"use_gazebo": "true"})
@@ -27,36 +29,29 @@ def generate_launch_description():
 
     # Declare arguments
     ld.add_action(DeclareLaunchArgument("use_rviz", default_value="true"))
+    ld.add_action(DeclareLaunchArgument("use_camera_bridge", default_value="true"))
 
-    # 1) robot_state_publisher
+    # 1) robot_state_publisher - publishes robot description for MoveIt
     rsp_launch = generate_rsp_launch(moveit_config)
     ld.add_action(rsp_launch)
 
-    # 2) Launch Gazebo with custom world
+    # 2) Launch Gazebo with world file that contains robot INLINE
+    # The robot model is NOT dynamically spawned - it loads with the world
+    # This ensures camera sensor is properly registered by sensors-system
     gazebo_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(get_package_share_directory("ros_gz_sim"), "launch", "gz_sim.launch.py")
         ),
         launch_arguments={
-            "gz_args": str(launch_package_path / "worlds/jaka_zu7_with_camera.world") + " -r",
+            # Use the eye-in-hand camera world file (robot inline in world)
+            "gz_args": str(launch_package_path / "worlds/jaka_zu7_eye_in_hand_camera.world") + " -r",
         }.items()
     )
     ld.add_action(gazebo_launch)
 
-    # 3) Spawn robot via ros_gz_sim create - waits for robot_description topic
-    spawn_robot = Node(
-        package='ros_gz_sim',
-        executable='create',
-        arguments=[
-            '-topic', '/robot_description',
-            '-name', 'jaka_zu7',
-            '-allow_renaming',
-        ],
-        output='screen',
-    )
-    ld.add_action(spawn_robot)
+    # 3) NO robot spawner needed! Robot is already in the world file
 
-    # 4) Launch MoveIt
+    # 4) Launch MoveIt move_group
     moveit_launch = generate_move_group_launch(moveit_config)
     ld.add_action(moveit_launch)
 
@@ -65,8 +60,7 @@ def generate_launch_description():
     ld.add_action(rviz_launch)
 
     # 6) Spawn controllers to Gazebo's controller_manager
-    # Note: Do NOT start ros2_control_node! Gazebo's gz_ros2_control plugin
-    # already provides /controller_manager. We only spawn controllers to it.
+    # Gazebo's gz_ros2_control plugin provides /controller_manager
     controller_spawner = TimerAction(
         period=5.0,  # Wait for gz_ros2_control to be ready
         actions=[
@@ -92,5 +86,23 @@ def generate_launch_description():
         ]
     )
     ld.add_action(joint_state_broadcaster_spawner)
+
+    # 7) Camera bridge - bridges Gazebo camera topic to ROS
+    # Camera topic: /world/jaka_zu7_eye_in_hand/model/jaka_zu7/link/Link_6/sensor/camera_sensor/image
+    camera_bridge = TimerAction(
+        period=10.0,  # Wait for Gazebo sensors to initialize
+        actions=[
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(
+                        get_package_share_directory("jaka_vision"),
+                        "launch",
+                        "gazebo_camera_bridge.launch.py"
+                    )
+                ),
+            )
+        ]
+    )
+    ld.add_action(camera_bridge)
 
     return ld

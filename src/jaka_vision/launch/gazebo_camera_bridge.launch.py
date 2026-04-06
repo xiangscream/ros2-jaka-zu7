@@ -1,51 +1,57 @@
 """
-Launch file for JAKA ZU7 with Eye-in-Hand Camera
+Launch file for Gazebo Camera Bridge
 
-Adds camera bridge to existing Gazebo + MoveIt setup.
-Uses image_bridge for image topics (not parameter_bridge).
+Bridges Gazebo camera topics to ROS 2 image topics using ros_gz_bridge.
 
 Usage:
-    # 首先启动 Gazebo + MoveIt
-    ros2 launch jaka_zu7_moveit_config demo_gazebo.launch.py
+    # 首先启动 Gazebo + MoveIt with camera world
+    ros2 launch jaka_zu7_moveit_config demo_gazebo_with_camera.launch.py
 
     # 然后在另一个终端启动相机桥接
     ros2 launch jaka_vision gazebo_camera_bridge.launch.py
-"""
 
-import os
-from ament_index_python.packages import get_package_share_directory
+Gazebo Camera Topic Mapping (Eye-in-Hand):
+    Source (Gazebo):  /world/jaka_zu7_eye_in_hand/model/jaka_zu7/link/Link_6/sensor/camera_sensor/image
+    Target (ROS 2):   /camera/image_raw
+"""
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
 from launch_ros.actions import Node
-from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
-    # ros_gz_image bridge for camera topics - uses image_bridge which is required for image transport
-    camera_image_bridge = Node(
-        package='ros_gz_image',
-        executable='image_bridge',
-        name='camera_image_bridge',
+    # Declare launch arguments
+    declared_arguments = [
+        DeclareLaunchArgument('use_sim_time', default_value='true'),
+    ]
+
+    # Gazebo Fortress camera topic path for eye-in-hand camera
+    # Format: /world/<world_name>/model/<model_name>/link/<link_name>/sensor/<sensor_name>/image
+    gz_camera_topic = '/world/jaka_zu7_eye_in_hand/model/jaka_zu7/link/Link_6/sensor/camera_sensor/image'
+    ros_camera_topic = '/camera/image_raw'
+
+    # ros_gz_bridge for explicit image topic mapping
+    # Bridge Gazebo Image to ROS Image
+    camera_bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='camera_bridge',
         arguments=[
-            '/camera/image',
+            f'{gz_camera_topic}@sensor_msgs/msg/Image@ros_gz_interfaces/msg/Image'
         ],
         parameters=[{'use_sim_time': True}],
+        remappings=[
+            (gz_camera_topic, ros_camera_topic),
+        ],
         output='screen',
     )
 
-    # Relay camera_info to proper topic path
-    camera_info_relay = Node(
-        package='topic_tools',
-        executable='relay',
-        name='camera_info_relay',
-        arguments=['camera/camera_info', 'camera/image/camera_info'],
-        parameters=[{'use_sim_time': True}],
-        output='screen',
-    )
+    # Camera info relay (for camera calibration)
+    # Try to relay camera_info if available from Gazebo
+    gz_camera_info_topic = gz_camera_topic.replace('/image', '/camera_info')
 
     return LaunchDescription([
-        DeclareLaunchArgument('use_sim_time', default_value='true'),
-        camera_image_bridge,
-        camera_info_relay,
+        *declared_arguments,
+        camera_bridge,
     ])

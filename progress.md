@@ -143,13 +143,45 @@ Gazebo SDF World
 
 **问题**：URDF spawn 的相机传感器无法在 Gazebo Fortress 工作
 **原因**：`ros_gz_sim create` 在 sensors-system 初始化后 spawn，传感器无法注册
-**状态**：待解决
+**状态**：已解决 - 使用 SDF 世界文件中的外部相机作为主方案
 
-**临时方案**：使用外部固定相机观察工作空间（已实现）
+**方案 A（已实现）**：外部固定相机（使用 SDF world）
+- `jaka_zu7_with_camera.world` - 在 SDF 世界中直接定义相机
+- `demo_gazebo_with_camera.launch.py` - 使用该世界文件启动
 
-**下一步尝试**：
-- 使用 Gazebo service 在运行时将相机模型附加到机器人
-- 或将完整 URDF 转为 SDF 后在 world 中预加载
+**方案 B（已配置，可选）**：Eye-in-Hand URDF 相机
+- `jaka_camera_gazebo.xacro` - **可配置相机系统**
+- 虽然 URDF 相机传感器在 Gazebo 中不工作，但 URDF 定义本身是可用的
+
+### 可配置相机系统 (2026-04-06)
+
+**新增功能**：`jaka_camera_gazebo.xacro` 现在支持以下参数：
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `camera_type` | `generic` | `realsense_d435` / `kinect` / `generic` |
+| `offset_x/y/z` | `0.0/0.0/0.05` | 相对 Link_6 的位置偏移 |
+| `offset_roll/pitch/yaw` | `0/0/0` | 相对 Link_6 的旋转偏移 |
+| `joint_type` | `fixed` | `fixed` / `floating` / `revolute` |
+| `update_rate` | `30.0` | 相机更新频率 Hz |
+| `image_width/height` | `640/480` | 图像分辨率 |
+
+**相机尺寸根据类型自动调整**：
+- `generic`: 0.02 x 0.02 x 0.02 m (黑色小方块)
+- `realsense_d435`: 0.025 x 0.09 x 0.025 m (灰色长条)
+- `kinect`: 0.06 x 0.18 x 0.07 m (蓝灰色大方块)
+
+**使用示例**：
+```bash
+# 使用默认 generic 相机
+ros2 launch jaka_zu7_moveit_config demo_gazebo.launch.py
+
+# 使用 Realsense D435 配置
+xacro jaka_zu7_with_camera.urdf.xacro camera_type:=realsense_d435 camera_offset_z:=0.08
+
+# 使用 floating 关节模拟相机自由度的研究
+xacro jaka_zu7_with_camera.urdf.xacro camera_joint_type:=floating
+```
 
 ### 测试步骤
 

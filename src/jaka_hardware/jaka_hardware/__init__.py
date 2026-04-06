@@ -1,1 +1,0 @@
-# jaka_hardware package

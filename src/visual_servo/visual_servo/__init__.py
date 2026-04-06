@@ -1,1 +1,0 @@
-# visual_servo package
