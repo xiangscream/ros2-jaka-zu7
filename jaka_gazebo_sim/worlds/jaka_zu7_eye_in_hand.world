@@ -4,6 +4,8 @@
 
   Key: Robot is loaded INLINE with the world, not dynamically spawned.
   This ensures camera sensor is properly registered by sensors-system.
+
+  Robot base: Z=0.0 (ground level)
 -->
 <sdf version="1.7">
   <world name="jaka_zu7_eye_in_hand">
@@ -14,13 +16,13 @@
       <real_time_factor>1.0</real_time_factor>
     </physics>
 
-    <!-- Core Gazebo systems - ORDER MATTERS -->
+    <!-- Core Gazebo systems -->
     <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
     <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
     <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
     <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact"/>
 
-    <!-- Camera sensor system - MUST be initialized BEFORE robot loads -->
+    <!-- Camera sensor system -->
     <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
       <render_engine>ogre2</render_engine>
     </plugin>
@@ -76,55 +78,9 @@
       </link>
     </model>
 
-    <!-- Work table -->
-    <model name="work_table">
-      <static>true</static>
-      <pose>0.5 0 0.4 0 0 0</pose>
-      <link name="link">
-        <collision name="table_top">
-          <pose>0 0 0.01 0 0 0</pose>
-          <geometry>
-            <box>
-              <size>0.3 0.3 0.02</size>
-            </box>
-          </geometry>
-        </collision>
-        <visual name="table_visual">
-          <pose>0 0 0.01 0 0 0</pose>
-          <geometry>
-            <box>
-              <size>0.3 0.3 0.02</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0.6 0.4 0.2 1</ambient>
-            <diffuse>0.6 0.4 0.2 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
-    <!-- Apriltag target on table -->
-    <model name="apriltag_target">
-      <static>true</static>
-      <pose>0.5 0 0.42 0 0 0</pose>
-      <link name="link">
-        <visual name="visual">
-          <geometry>
-            <box>
-              <size>0.1 0.1 0.005</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>1 1 1 1</ambient>
-            <diffuse>1 1 1 1</diffuse>
-          </material>
-        </visual>
-      </link>
-    </model>
-
     <!-- JAKA ZU7 Robot with Eye-in-Hand Camera - INLINE -->
     <model name="jaka_zu7">
+      <!-- Robot base lifted slightly so mesh origin sits on ground -->
       <pose>0 0 0 0 0 0</pose>
 
       <!-- Link 0: Base -->
@@ -416,7 +372,7 @@
         </axis>
       </joint>
 
-      <!-- Link 6: End Effector WITH CAMERA -->
+      <!-- Link 6: End Effector -->
       <link name="Link_6">
         <inertial>
           <pose>2.7e-05 -1.3e-05 -0.020746 0 0 0</pose>
@@ -446,27 +402,15 @@
             </mesh>
           </geometry>
         </visual>
-        <!-- Camera visual -->
-        <visual name="camera_visual">
-          <pose>0 0 0.05 0 0 0</pose>
-          <geometry>
-            <box>
-              <size>0.02 0.02 0.02</size>
-            </box>
-          </geometry>
-          <material>
-            <ambient>0.1 0.1 0.1 1</ambient>
-            <diffuse>0.2 0.2 0.2 1</diffuse>
-          </material>
-        </visual>
         <!-- EYE-IN-HAND CAMERA SENSOR -->
+        <!-- Camera points forward (+X in optical frame) to look at workspace -->
         <sensor name="camera_sensor" type="camera">
           <pose>0 0 0.05 0 0 0</pose>
           <always_on>true</always_on>
           <update_rate>30</update_rate>
           <visualize>true</visualize>
           <camera>
-            <horizontal_fov>1.047</horizontal_fov>
+            <horizontal_fov>1.2</horizontal_fov>
             <image>
               <width>640</width>
               <height>480</height>
@@ -476,12 +420,17 @@
               <near>0.05</near>
               <far>10</far>
             </clip>
+            <noise>
+              <type>gaussian</type>
+              <mean>0.0</mean>
+              <stddev>0.007</stddev>
+            </noise>
           </camera>
           <topic>/camera/image_raw</topic>
         </sensor>
       </link>
 
-      <!-- Robot is not static - can move -->
+      <!-- Robot can move -->
       <static>false</static>
 
       <!-- ros2_control plugin -->
