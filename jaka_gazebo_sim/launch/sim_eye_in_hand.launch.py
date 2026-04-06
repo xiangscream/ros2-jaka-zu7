@@ -5,9 +5,9 @@ The robot is loaded INLINE in the SDF world file, not dynamically spawned.
 This ensures the camera sensor is properly registered by the sensors-system.
 
 Starts:
-1. Robot state publisher (for ros2control plugin)
+1. Robot state publisher
 2. Gazebo Sim (Fortress) with inline world
-3. ros2control controller spawner
+3. ros2control controller spawner (if ros2_control tag present in URDF)
 4. Camera image bridge (Gazebo -> ROS2)
 
 Usage:
@@ -58,6 +58,10 @@ def generate_launch_description():
         'ros2_controllers.yaml'
     )
 
+    # Camera topic paths
+    gz_camera_topic = '/world/jaka_zu7_eye_in_hand/model/jaka_zu7/link/Link_6/sensor/camera_sensor/image'
+    ros_camera_topic = '/camera/image_raw'
+
     # Declare arguments
     use_sim_time_arg = DeclareLaunchArgument(
         'use_sim_time',
@@ -107,9 +111,6 @@ def generate_launch_description():
     )
 
     # Camera image bridge (Gazebo sensor topic -> ROS2 topic)
-    gz_camera_topic = '/world/jaka_zu7_eye_in_hand/model/jaka_zu7/link/Link_6/sensor/camera_sensor/image'
-    ros_camera_topic = '/camera/image_raw'
-
     camera_bridge = Node(
         package='ros_gz_image',
         executable='image_bridge',

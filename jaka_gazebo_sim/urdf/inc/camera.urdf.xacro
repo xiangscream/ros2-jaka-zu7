@@ -62,7 +62,7 @@
                 <update_rate>30.0</update_rate>
                 <visualize>true</visualize>
                 <camera>
-                    <horizontal_fov>1.047</horizontal_fov>
+                    <horizontal_fov>1.2</horizontal_fov>  <!-- ~70 degrees for wider view -->
                     <image>
                         <width>640</width>
                         <height>480</height>
@@ -72,8 +72,16 @@
                         <near>0.05</near>
                         <far>10.0</far>
                     </clip>
+                    <!-- Camera noise for realism -->
+                    <noise>
+                        <type>gaussian</type>
+                        <mean>0.0</mean>
+                        <stddev>0.007</stddev>
+                    </noise>
                 </camera>
+                <camera_info_topic>/camera/camera_info</camera_info_topic>
                 <topic>/camera/image_raw</topic>
+                <gz_frame_id>camera_link</gz_frame_id>
             </sensor>
         </gazebo>
 
