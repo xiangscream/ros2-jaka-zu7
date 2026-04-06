@@ -80,8 +80,8 @@
 
     <!-- JAKA ZU7 Robot with Eye-in-Hand Camera - INLINE -->
     <model name="jaka_zu7">
-      <!-- Robot base lifted slightly so mesh origin sits on ground -->
-      <pose>0 0 0 0 0 0</pose>
+      <!-- Robot base lifted so mesh sits on ground (mesh bottom at z=0) -->
+      <pose>0 0 0.06 0 0 0</pose>
 
       <!-- Link 0: Base -->
       <link name="Link_0">
